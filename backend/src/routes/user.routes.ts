@@ -8,6 +8,7 @@ import {
   deleteUser,
   getUserStats,
 } from '../services/user.service';
+import { encodeUsers } from '../services/proto.service';
 import { CreateUserDTO, UpdateUserDTO, ApiResponse, User, DailyStats } from '../types';
 
 const router = Router();
@@ -51,6 +52,27 @@ router.get('/users/stats', (_req: Request, res: Response) => {
     res.status(500).json(response);
   }
 });
+
+router.get('/users/export', async (_req: Request, res: Response) => {
+  try {
+    const users = getAllUsers();
+
+    const binaryData = await encodeUsers(users);
+
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', 'attachment; filename="users.pb"');
+    res.setHeader('Content-Length', binaryData.length.toString());
+
+    res.status(200).send(binaryData);
+  } catch (error) {
+    const response: ApiResponse<null> = {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to export users',
+    };
+    res.status(500).json(response);
+  }
+});
+
 
 router.get('/users', (_req: Request, res: Response) => {
   try {
