@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { User, CreateUserDTO, UpdateUserDTO } from '../types';
-import { getAllUsers, createUser, updateUser, deleteUser, getPublicKey } from '../services/api';
+import { createUser, updateUser, deleteUser, getPublicKey, exportUsersProtobuf } from '../services/api';
 import { verifyAndFilterUsers } from '../services/crypto';
+import { decodeUsersProtobuf } from '../services/protobuf';
 
 interface UseUsersState {
   users: User[];
@@ -26,12 +27,13 @@ export const useUsers = (): UseUsersState & UseUsersActions => {
       setLoading(true);
       setError(null);
 
-      const [allUsers, publicKeyData] = await Promise.all([
-        getAllUsers(),
+      const [protobufBuffer, publicKeyData] = await Promise.all([
+        exportUsersProtobuf(),
         getPublicKey()
       ]);
 
-      const verifiedUsers = await verifyAndFilterUsers(allUsers, publicKeyData.publicKey);
+      const decodedUsers = decodeUsersProtobuf(protobufBuffer);
+      const verifiedUsers = await verifyAndFilterUsers(decodedUsers, publicKeyData.publicKey);
       setUsers(verifiedUsers);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch users');

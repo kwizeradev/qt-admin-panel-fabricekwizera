@@ -31,24 +31,73 @@ const importPublicKey = async (pemKey: string): Promise<CryptoKey> => {
   }
 };
 
-const hashEmail = async (email: string): Promise<ArrayBuffer> => {
-  try {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(email);
-    const hash = await window.crypto.subtle.digest('SHA-384', data);
-    return hash;
-  } catch (error) {
-    console.error('Error hashing email:', error);
-    throw new Error('Failed to hash email');
-  }
-};
 
 const hexToUint8Array = (hexString: string): Uint8Array => {
   const bytes = new Uint8Array(hexString.length / 2);
   for (let i = 0; i < hexString.length; i += 2) {
-    bytes[i / 2] = parseInt(hexString.substring(i, 2), 16);
+    bytes[i / 2] = parseInt(hexString.substring(i, i + 2), 16);
   }
   return bytes;
+};
+
+const derToRaw = (derSignature: Uint8Array): Uint8Array => {
+  try {
+    let offset = 0;
+    
+    if (derSignature[offset++] !== 0x30) throw new Error('Invalid DER signature');
+    
+    let length = derSignature[offset++];
+    if (length & 0x80) {
+      const lengthBytes = length & 0x7f;
+      offset += lengthBytes;
+    }
+    
+    if (derSignature[offset++] !== 0x02) throw new Error('Invalid DER signature');
+    let rLength = derSignature[offset++];
+    if (rLength & 0x80) {
+      const lengthBytes = rLength & 0x7f;
+      rLength = 0;
+      for (let i = 0; i < lengthBytes; i++) {
+        rLength = (rLength << 8) + derSignature[offset++];
+      }
+    }
+    
+    let rStart = offset;
+    if (derSignature[rStart] === 0x00) {
+      rStart++;
+      rLength--;
+    }
+    const r = derSignature.slice(rStart, rStart + rLength);
+    offset = rStart + rLength;
+    
+    if (derSignature[offset++] !== 0x02) throw new Error('Invalid DER signature');
+    let sLength = derSignature[offset++];
+    if (sLength & 0x80) {
+      const lengthBytes = sLength & 0x7f;
+      sLength = 0;
+      for (let i = 0; i < lengthBytes; i++) {
+        sLength = (sLength << 8) + derSignature[offset++];
+      }
+    }
+    
+    let sStart = offset;
+    if (derSignature[sStart] === 0x00) {
+      sStart++;
+      sLength--;
+    }
+    const s = derSignature.slice(sStart, sStart + sLength);
+    
+    const coordSize = 48;
+    const rawSignature = new Uint8Array(coordSize * 2);
+    
+    rawSignature.set(r, coordSize - r.length);
+    rawSignature.set(s, coordSize * 2 - s.length);
+    
+    return rawSignature;
+  } catch (error) {
+    console.error('Error converting DER to raw signature:', error);
+    throw error;
+  }
 };
 
 export const verifyUserSignature = async (
@@ -57,10 +106,10 @@ export const verifyUserSignature = async (
 ): Promise<boolean> => {
   try {
     const publicKey = await importPublicKey(publicKeyPem);
-
-    const hash = await hashEmail(user.email);
-
-    const signature = hexToUint8Array(user.signature);
+    const encoder = new TextEncoder();
+    const emailData = encoder.encode(user.email);
+    const derSignature = hexToUint8Array(user.signature);
+    const rawSignature = derToRaw(derSignature);
 
     const isValid = await window.crypto.subtle.verify(
       {
@@ -68,13 +117,9 @@ export const verifyUserSignature = async (
         hash: { name: 'SHA-384' },
       },
       publicKey,
-      signature.buffer.slice() as ArrayBuffer,
-      hash
+      rawSignature.buffer as ArrayBuffer,
+      emailData.buffer as ArrayBuffer
     );
-
-    if (import.meta.env.DEV) {
-      console.log(`Signature verification for ${user.email}:`, isValid ? '✅ Valid' : '❌ Invalid');
-    }
 
     return isValid;
   } catch (error) {
@@ -97,16 +142,6 @@ export const verifyAndFilterUsers = async (
     const validUsers = verificationResults
       .filter((result) => result.isValid)
       .map((result) => result.user);
-
-    const invalidCount = users.length - validUsers.length;
-    
-    if (invalidCount > 0 && import.meta.env.DEV) {
-      console.warn(`Filtered out ${invalidCount} user(s) with invalid signatures`);
-    }
-
-    if (import.meta.env.DEV) {
-      console.log(`${validUsers.length} user(s) verified successfully`);
-    }
 
     return validUsers;
   } catch (error) {
