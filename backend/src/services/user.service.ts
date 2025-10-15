@@ -1,15 +1,14 @@
 import db from '../config/database';
 import { User, CreateUserDTO, UpdateUserDTO, DailyStats } from '../types';
 import { signEmail } from './crypto.service';
+import { ERROR_MESSAGES } from '../constants';
 
 export const getAllUsers = (): User[] => {
   try {
     const query = 'SELECT * FROM users ORDER BY createdAt DESC';
-    const users = db.prepare(query).all() as User[];
-    return users;
+    return db.prepare(query).all() as User[];
   } catch (error) {
-    console.error('Error fetching users:', error);
-    throw new Error('Failed to fetch users');
+    throw new Error(ERROR_MESSAGES.FAILED_TO_FETCH_USERS);
   }
 };
 
@@ -19,8 +18,7 @@ export const getUserById = (id: number): User | null => {
     const user = db.prepare(query).get(id) as User | undefined;
     return user || null;
   } catch (error) {
-    console.error('Error fetching user:', error);
-    throw new Error('Failed to fetch user');
+    throw new Error(ERROR_MESSAGES.FAILED_TO_FETCH_USER);
   }
 };
 
@@ -30,8 +28,7 @@ export const getUserByEmail = (email: string): User | null => {
     const user = db.prepare(query).get(email) as User | undefined;
     return user || null;
   } catch (error) {
-    console.error('Error fetching user by email:', error);
-    throw new Error('Failed to fetch user by email');
+    throw new Error(ERROR_MESSAGES.FAILED_TO_FETCH_USER);
   }
 };
 
@@ -64,8 +61,7 @@ export const createUser = (userData: CreateUserDTO): User => {
 
     return newUser;
   } catch (error) {
-    console.error('Error creating user:', error);
-    throw error instanceof Error ? error : new Error('Unknown error while creating user');
+    throw error instanceof Error ? error : new Error(ERROR_MESSAGES.FAILED_TO_CREATE_USER);
   }
 };
 
@@ -111,8 +107,7 @@ export const updateUser = (id: number, userData: UpdateUserDTO): User => {
 
     return updatedUser;
   } catch (error) {
-    console.error('Error updating user:', error);
-    throw error instanceof Error ? error : new Error('Unknown error while updating user');
+    throw error instanceof Error ? error : new Error(ERROR_MESSAGES.FAILED_TO_UPDATE_USER);
   }
 };
 
@@ -126,8 +121,7 @@ export const deleteUser = (id: number): boolean => {
 
     return result.changes > 0;
   } catch (error) {
-    console.error('Error deleting user:', error);
-    throw error instanceof Error ? error : new Error('Unknown error while deleting user');
+    throw error instanceof Error ? error : new Error(ERROR_MESSAGES.FAILED_TO_DELETE_USER);
   }
 };
 
@@ -157,7 +151,6 @@ export const getUserStats = (): DailyStats[] => {
     
     return stats;
   } catch (error) {
-    console.error('Error fetching user stats:', error);
-    throw new Error('Failed to fetch user statistics');
+    throw new Error(ERROR_MESSAGES.FAILED_TO_FETCH_STATISTICS);
   }
 };

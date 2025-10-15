@@ -9,67 +9,49 @@ import {
   getUserStats,
 } from '../services/user.service';
 import { encodeUsers } from '../services/proto.service';
-import { CreateUserDTO, UpdateUserDTO, ApiResponse, User, DailyStats } from '../types';
+import { CreateUserDTO, UpdateUserDTO } from '../types';
+import { sendSuccess, sendError, isValidRole, isValidStatus, isValidId } from '../utils/response';
+import { HTTP_STATUS, ERROR_MESSAGES } from '../constants';
 
 const router = Router();
 
 router.get('/public-key', (_req: Request, res: Response) => {
   try {
     const publicKey = getPublicKey();
-    return res.status(200).json({
-      success: true,
-      data: {
-        publicKey,
-        algorithm: 'ECDSA',
-        curve: 'secp384r1',
-        hash: 'SHA-384',
-      },
+    return sendSuccess(res, {
+      publicKey,
+      algorithm: 'ECDSA',
+      curve: 'secp384r1',
+      hash: 'SHA-384',
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: 'Failed to retrieve public key',
-    });
+    return sendError(res, ERROR_MESSAGES.FAILED_TO_RETRIEVE_PUBLIC_KEY, HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 });
 
 router.get('/users/stats', (_req: Request, res: Response) => {
   try {
     const stats = getUserStats();
-
-    const response: ApiResponse<DailyStats[]> = {
-      success: true,
-      data: stats,
-    };
-
-    res.status(200).json(response);
+    return sendSuccess(res, stats);
   } catch (error) {
-    const response: ApiResponse<DailyStats[]> = {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to fetch statistics',
-    };
-
-    res.status(500).json(response);
+    const errorMessage = error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_FETCH_STATISTICS;
+    return sendError(res, errorMessage, HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 });
 
 router.get('/users/export', async (_req: Request, res: Response) => {
   try {
     const users = getAllUsers();
-
     const binaryData = await encodeUsers(users);
 
     res.setHeader('Content-Type', 'application/octet-stream');
     res.setHeader('Content-Disposition', 'attachment; filename="users.pb"');
     res.setHeader('Content-Length', binaryData.length.toString());
 
-    res.status(200).send(binaryData);
+    return res.status(HTTP_STATUS.OK).send(binaryData);
   } catch (error) {
-    const response: ApiResponse<null> = {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to export users',
-    };
-    res.status(500).json(response);
+    const errorMessage = error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_EXPORT_USERS;
+    return sendError(res, errorMessage, HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 });
 
@@ -77,133 +59,103 @@ router.get('/users/export', async (_req: Request, res: Response) => {
 router.get('/users', (_req: Request, res: Response) => {
   try {
     const users = getAllUsers();
-    const response: ApiResponse<User[]> = { success: true, data: users };
-    return res.status(200).json(response);
+    return sendSuccess(res, users);
   } catch (error) {
-    const response: ApiResponse<User[]> = {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to fetch users',
-    };
-    return res.status(500).json(response);
+    const errorMessage = error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_FETCH_USERS;
+    return sendError(res, errorMessage, HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 });
 
 
 router.get('/users/:id', (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) {
-      const response: ApiResponse<User> = { success: false, error: 'Invalid user ID' };
-      return res.status(400).json(response);
+    const id = isValidId(req.params.id);
+    if (!id) {
+      return sendError(res, ERROR_MESSAGES.INVALID_USER_ID, HTTP_STATUS.BAD_REQUEST);
     }
 
     const user = getUserById(id);
     if (!user) {
-      const response: ApiResponse<User> = { success: false, error: 'User not found' };
-      return res.status(404).json(response);
+      return sendError(res, ERROR_MESSAGES.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND);
     }
 
-    const response: ApiResponse<User> = { success: true, data: user };
-    return res.status(200).json(response);
+    return sendSuccess(res, user);
   } catch (error) {
-    const response: ApiResponse<User> = {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to fetch user',
-    };
-    return res.status(500).json(response);
+    const errorMessage = error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_FETCH_USER;
+    return sendError(res, errorMessage, HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 });
 
 router.post('/users', (req: Request, res: Response) => {
   try {
     const userData: CreateUserDTO = req.body;
+    
     if (!userData.email || !userData.role || !userData.status) {
-      const response: ApiResponse<User> = {
-        success: false,
-        error: 'Missing required fields: email, role, status',
-      };
-      return res.status(400).json(response);
+      return sendError(res, ERROR_MESSAGES.MISSING_REQUIRED_FIELDS, HTTP_STATUS.BAD_REQUEST);
     }
 
-    if (!['admin', 'user', 'guest'].includes(userData.role)) {
-      const response: ApiResponse<User> = {
-        success: false,
-        error: 'Invalid role. Must be: admin, user, or guest',
-      };
-      return res.status(400).json(response);
+    if (!isValidRole(userData.role)) {
+      return sendError(res, ERROR_MESSAGES.INVALID_ROLE, HTTP_STATUS.BAD_REQUEST);
     }
 
-    if (!['active', 'inactive'].includes(userData.status)) {
-      const response: ApiResponse<User> = {
-        success: false,
-        error: 'Invalid status. Must be: active or inactive',
-      };
-      return res.status(400).json(response);
+    if (!isValidStatus(userData.status)) {
+      return sendError(res, ERROR_MESSAGES.INVALID_STATUS, HTTP_STATUS.BAD_REQUEST);
     }
 
     const newUser = createUser(userData);
-    const response: ApiResponse<User> = { success: true, data: newUser };
-    return res.status(201).json(response);
+    return sendSuccess(res, newUser, HTTP_STATUS.CREATED);
   } catch (error) {
-    const response: ApiResponse<User> = {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to create user',
-    };
-    const statusCode = error instanceof Error && error.message.includes('already exists') ? 400 : 500;
-    return res.status(statusCode).json(response);
+    const errorMessage = error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_CREATE_USER;
+    const statusCode = error instanceof Error && error.message.includes('already exists') 
+      ? HTTP_STATUS.BAD_REQUEST 
+      : HTTP_STATUS.INTERNAL_SERVER_ERROR;
+    return sendError(res, errorMessage, statusCode);
   }
 });
 
 router.put('/users/:id', (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) {
-      const response: ApiResponse<User> = { success: false, error: 'Invalid user ID' };
-      return res.status(400).json(response);
+    const id = isValidId(req.params.id);
+    if (!id) {
+      return sendError(res, ERROR_MESSAGES.INVALID_USER_ID, HTTP_STATUS.BAD_REQUEST);
     }
 
     const userData: UpdateUserDTO = req.body;
-    if (userData.role && !['admin', 'user', 'guest'].includes(userData.role)) {
-      const response: ApiResponse<User> = { success: false, error: 'Invalid role. Must be: admin, user, or guest' };
-      return res.status(400).json(response);
+    
+    if (userData.role && !isValidRole(userData.role)) {
+      return sendError(res, ERROR_MESSAGES.INVALID_ROLE, HTTP_STATUS.BAD_REQUEST);
     }
 
-    if (userData.status && !['active', 'inactive'].includes(userData.status)) {
-      const response: ApiResponse<User> = { success: false, error: 'Invalid status. Must be: active or inactive' };
-      return res.status(400).json(response);
+    if (userData.status && !isValidStatus(userData.status)) {
+      return sendError(res, ERROR_MESSAGES.INVALID_STATUS, HTTP_STATUS.BAD_REQUEST);
     }
 
     const updatedUser = updateUser(id, userData);
-    const response: ApiResponse<User> = { success: true, data: updatedUser };
-    return res.status(200).json(response);
+    return sendSuccess(res, updatedUser);
   } catch (error) {
-    const response: ApiResponse<User> = {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to update user',
-    };
-    const statusCode = error instanceof Error && error.message === 'User not found' ? 404 : 500;
-    return res.status(statusCode).json(response);
+    const errorMessage = error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_UPDATE_USER;
+    const statusCode = error instanceof Error && error.message === 'User not found' 
+      ? HTTP_STATUS.NOT_FOUND 
+      : HTTP_STATUS.INTERNAL_SERVER_ERROR;
+    return sendError(res, errorMessage, statusCode);
   }
 });
 
 router.delete('/users/:id', (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) {
-      const response: ApiResponse<null> = { success: false, error: 'Invalid user ID' };
-      return res.status(400).json(response);
+    const id = isValidId(req.params.id);
+    if (!id) {
+      return sendError(res, ERROR_MESSAGES.INVALID_USER_ID, HTTP_STATUS.BAD_REQUEST);
     }
 
     deleteUser(id);
-    const response: ApiResponse<null> = { success: true, data: undefined };
-    return res.status(200).json(response);
+    return sendSuccess(res, null);
   } catch (error) {
-    const response: ApiResponse<null> = {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to delete user',
-    };
-    const statusCode = error instanceof Error && error.message === 'User not found' ? 404 : 500;
-    return res.status(statusCode).json(response);
+    const errorMessage = error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_DELETE_USER;
+    const statusCode = error instanceof Error && error.message === 'User not found' 
+      ? HTTP_STATUS.NOT_FOUND 
+      : HTTP_STATUS.INTERNAL_SERVER_ERROR;
+    return sendError(res, errorMessage, statusCode);
   }
 });
 

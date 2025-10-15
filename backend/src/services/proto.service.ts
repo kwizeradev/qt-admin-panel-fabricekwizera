@@ -13,10 +13,8 @@ const loadProto = async (): Promise<protobuf.Root> => {
 
   try {
     userProtoRoot = await protobuf.load(PROTO_PATH);
-    console.log('Protocol Buffer schema loaded');
     return userProtoRoot;
   } catch (error) {
-    console.error('Error loading proto file:', error);
     throw new Error('Failed to load Protocol Buffer schema');
   }
 };
@@ -41,16 +39,12 @@ export const encodeUsers = async (users: User[]): Promise<Buffer> => {
 
     const buffer = UserList.encode(message).finish();
 
-    console.log(`Encoded ${users.length} users to protobuf (${buffer.length} bytes)`);
-
     return Buffer.from(buffer);
   } catch (error) {
-    console.error('Error encoding users to protobuf:', error);
     throw new Error('Failed to encode users to Protocol Buffer format');
   }
 };
 
-// Decode : testing
 export const decodeUsers = async (buffer: Buffer): Promise<User[]> => {
   try {
     const root = await loadProto();
@@ -67,7 +61,6 @@ export const decodeUsers = async (buffer: Buffer): Promise<User[]> => {
 
     return object.users || [];
   } catch (error) {
-    console.error('Error decoding protobuf:', error);
     throw new Error('Failed to decode Protocol Buffer data');
   }
 };

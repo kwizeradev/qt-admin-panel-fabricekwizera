@@ -12,13 +12,10 @@ let publicKey: string;
 const ensureKeysDirectory = (): void => {
   if (!fs.existsSync(KEYS_DIR)) {
     fs.mkdirSync(KEYS_DIR, { recursive: true });
-    console.log('Keys directory created');
   }
 };
 
 const generateKeypair = (): void => {
-  console.log('Generating keypair...');
-
   const { privateKey: privKey, publicKey: pubKey } = crypto.generateKeyPairSync('ec', {
     namedCurve: 'secp384r1',
     publicKeyEncoding: {
@@ -36,8 +33,6 @@ const generateKeypair = (): void => {
 
   privateKey = privKey;
   publicKey = pubKey;
-
-  console.log('ECDSA keypair generated and saved');
 };
 
 const loadKeypair = (): boolean => {
@@ -45,12 +40,10 @@ const loadKeypair = (): boolean => {
     if (fs.existsSync(PRIVATE_KEY_PATH) && fs.existsSync(PUBLIC_KEY_PATH)) {
       privateKey = fs.readFileSync(PRIVATE_KEY_PATH, 'utf-8');
       publicKey = fs.readFileSync(PUBLIC_KEY_PATH, 'utf-8');
-      console.log('keypair loaded from files');
       return true;
     }
     return false;
   } catch (error) {
-    console.error('Error loading keypair:', error);
     return false;
   }
 };
@@ -75,7 +68,6 @@ export const signEmail = (email: string): string => {
 
     return signature.toString('hex');
   } catch (error) {
-    console.error('Error signing email:', error);
     throw new Error('Failed to sign email');
   }
 };
@@ -84,7 +76,6 @@ export const getPublicKey = (): string => {
   return publicKey;
 };
 
-// Verify signature : Test
 export const verifySignature = (email: string, signature: string): boolean => {
   try {
     const hash = crypto.createHash('sha384').update(email, 'utf-8').digest();
@@ -103,7 +94,6 @@ export const verifySignature = (email: string, signature: string): boolean => {
 
     return isValid;
   } catch (error) {
-    console.error('Error verifying signature:', error);
     return false;
   }
 };
