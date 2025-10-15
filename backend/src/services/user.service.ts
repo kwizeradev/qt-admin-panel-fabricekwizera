@@ -1,5 +1,5 @@
 import db from '../config/database';
-import { User, CreateUserDTO, UpdateUserDTO } from '../types';
+import { User, CreateUserDTO, UpdateUserDTO, DailyStats } from '../types';
 import { signEmail } from './crypto.service';
 
 export const getAllUsers = (): User[] => {
@@ -44,7 +44,7 @@ export const createUser = (userData: CreateUserDTO): User => {
     if (existingUser) throw new Error('Email already exists');
 
     const signature = signEmail(userData.email);
-    const createdAt = new Date().toISOString();
+    const createdAt = new Date().toLocaleString('sv-SE');
 
     const query = `
       INSERT INTO users (email, role, status, createdAt, signature)
@@ -128,5 +128,36 @@ export const deleteUser = (id: number): boolean => {
   } catch (error) {
     console.error('Error deleting user:', error);
     throw error instanceof Error ? error : new Error('Unknown error while deleting user');
+  }
+};
+
+export const getUserStats = (): DailyStats[] => {
+  try {
+    const stats: DailyStats[] = [];
+    
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      
+      const dateStr = date.toISOString().split('T')[0];
+
+      const query = `
+        SELECT COUNT(*) as count
+        FROM users
+        WHERE DATE(createdAt) = ?
+      `;
+      
+      const result = db.prepare(query).get(dateStr) as { count: number };
+      
+      stats.push({
+        date: dateStr,
+        count: result.count,
+      });
+    }
+    
+    return stats;
+  } catch (error) {
+    console.error('Error fetching user stats:', error);
+    throw new Error('Failed to fetch user statistics');
   }
 };

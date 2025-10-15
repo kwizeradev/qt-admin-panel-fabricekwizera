@@ -6,8 +6,9 @@ import {
   createUser,
   updateUser,
   deleteUser,
+  getUserStats,
 } from '../services/user.service';
-import { CreateUserDTO, UpdateUserDTO, ApiResponse, User } from '../types';
+import { CreateUserDTO, UpdateUserDTO, ApiResponse, User, DailyStats } from '../types';
 
 const router = Router();
 
@@ -31,6 +32,26 @@ router.get('/public-key', (_req: Request, res: Response) => {
   }
 });
 
+router.get('/users/stats', (_req: Request, res: Response) => {
+  try {
+    const stats = getUserStats();
+
+    const response: ApiResponse<DailyStats[]> = {
+      success: true,
+      data: stats,
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    const response: ApiResponse<DailyStats[]> = {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch statistics',
+    };
+
+    res.status(500).json(response);
+  }
+});
+
 router.get('/users', (_req: Request, res: Response) => {
   try {
     const users = getAllUsers();
@@ -44,6 +65,7 @@ router.get('/users', (_req: Request, res: Response) => {
     return res.status(500).json(response);
   }
 });
+
 
 router.get('/users/:id', (req: Request, res: Response) => {
   try {
