@@ -58,9 +58,8 @@ export const initializeCrypto = (): void => {
 
 export const signEmail = (email: string): string => {
   try {
-    const hash = crypto.createHash('sha384').update(email, 'utf-8').digest();
-
-    const signature = crypto.sign(null, hash, {
+    const emailBuffer = Buffer.from(email, 'utf-8');
+    const signature = crypto.sign('sha384', emailBuffer, {
       key: privateKey,
       format: 'pem',
       type: 'pkcs8',
@@ -78,12 +77,12 @@ export const getPublicKey = (): string => {
 
 export const verifySignature = (email: string, signature: string): boolean => {
   try {
-    const hash = crypto.createHash('sha384').update(email, 'utf-8').digest();
+    const emailBuffer = Buffer.from(email, 'utf-8');
     const signatureBuffer = Buffer.from(signature, 'hex');
 
     const isValid = crypto.verify(
-      null,
-      hash,
+      'sha384',
+      emailBuffer,
       {
         key: publicKey,
         format: 'pem',
