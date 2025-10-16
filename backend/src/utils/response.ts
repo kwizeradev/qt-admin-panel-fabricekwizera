@@ -21,15 +21,3 @@ export const sendError = (res: Response, error: string, statusCode: number = HTT
   return sendResponse(res, statusCode, false, undefined, error);
 };
 
-export const isValidRole = (role: string): boolean => {
-  return ['admin', 'user', 'guest'].includes(role);
-};
-
-export const isValidStatus = (status: string): boolean => {
-  return ['active', 'inactive'].includes(status);
-};
-
-export const isValidId = (id: string): number | null => {
-  const parsedId = parseInt(id, 10);
-  return isNaN(parsedId) ? null : parsedId;
-};

@@ -2,6 +2,7 @@ import db from '../config/database';
 import { User, CreateUserDTO, UpdateUserDTO, DailyStats } from '../types';
 import { signEmail } from './crypto.service';
 import { ERROR_MESSAGES } from '../constants';
+import { isValidEmail } from '../utils/validation';
 
 export const getAllUsers = (): User[] => {
   try {
@@ -34,8 +35,7 @@ export const getUserByEmail = (email: string): User | null => {
 
 export const createUser = (userData: CreateUserDTO): User => {
   try {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(userData.email)) throw new Error('Invalid email format');
+    if (!isValidEmail(userData.email)) throw new Error('Invalid email format');
 
     const existingUser = getUserByEmail(userData.email);
     if (existingUser) throw new Error('Email already exists');
@@ -71,8 +71,7 @@ export const updateUser = (id: number, userData: UpdateUserDTO): User => {
     if (!existingUser) throw new Error('User not found');
 
     if (userData.email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(userData.email)) throw new Error('Invalid email format');
+      if (!isValidEmail(userData.email)) throw new Error('Invalid email format');
 
       const userWithEmail = getUserByEmail(userData.email);
       if (userWithEmail && userWithEmail.id !== id) throw new Error('Email already exists');

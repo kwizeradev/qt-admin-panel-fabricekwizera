@@ -10,7 +10,8 @@ import {
 } from '../services/user.service';
 import { encodeUsers } from '../services/proto.service';
 import { CreateUserDTO, UpdateUserDTO } from '../types';
-import { sendSuccess, sendError, isValidRole, isValidStatus, isValidId } from '../utils/response';
+import { sendSuccess, sendError } from '../utils/response';
+import { isValidRole, isValidStatus, isValidId } from '../utils/validation';
 import { HTTP_STATUS, ERROR_MESSAGES } from '../constants';
 
 const router = Router();

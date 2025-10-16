@@ -1,24 +1,22 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
+import { Button } from './ui/Button';
 import { DailyStats } from '../types';
+import { formatChartDate, formatTooltipDate, isValidDate } from '../utils/dateHelpers';
 
 interface UserChartProps {
   stats: DailyStats[];
   loading: boolean;
+  error: string | null;
+  onRetry?: () => void;
 }
 
-const UserChart: React.FC<UserChartProps> = ({ stats, loading }) => {
-  const formatDate = (dateStr: string): string => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric' 
-    });
-  };
-
-  const chartData = stats.map(stat => ({
-    date: formatDate(stat.date),
+const UserChart: React.FC<UserChartProps> = ({ stats, loading, error, onRetry }) => {
+  const validStats = stats.filter(stat => isValidDate(stat.date));
+  
+  const chartData = validStats.map(stat => ({
+    date: formatChartDate(stat.date),
     count: stat.count,
     fullDate: stat.date,
   }));
@@ -32,6 +30,44 @@ const UserChart: React.FC<UserChartProps> = ({ stats, loading }) => {
         <CardContent>
           <div className="h-80 flex items-center justify-center">
             <div className="text-gray-500">Loading chart...</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Users Created (Last 7 Days)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80 flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-red-600 mb-2">Failed to load chart data</div>
+              <div className="text-gray-500 text-sm mb-4">{error}</div>
+              {onRetry && (
+                <Button onClick={onRetry} size="sm">
+                  Try Again
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (chartData.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Users Created (Last 7 Days)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80 flex items-center justify-center">
+            <div className="text-gray-500">No data available</div>
           </div>
         </CardContent>
       </Card>
@@ -69,16 +105,7 @@ const UserChart: React.FC<UserChartProps> = ({ stats, loading }) => {
                 formatter={(value: number) => [value, 'Users Created']}
                 labelFormatter={(date: string) => {
                   const item = chartData.find(d => d.date === date);
-                  if (item) {
-                    const fullDate = new Date(item.fullDate);
-                    return fullDate.toLocaleDateString('en-US', { 
-                      weekday: 'long',
-                      month: 'long', 
-                      day: 'numeric',
-                      year: 'numeric'
-                    });
-                  }
-                  return date;
+                  return item ? formatTooltipDate(item.fullDate) : date;
                 }}
               />
               <Bar 

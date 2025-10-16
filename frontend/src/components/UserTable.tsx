@@ -4,6 +4,8 @@ import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
 import { Badge } from './ui/Badge';
 import { Button } from './ui/Button';
 import { User } from '../types';
+import { formatTableDate } from '../utils/dateHelpers';
+import { getRoleBadgeVariant, getStatusBadgeVariant } from '../utils/badgeHelpers';
 
 interface UserTableProps {
   users: User[];
@@ -27,27 +29,6 @@ const UserTable: React.FC<UserTableProps> = ({
     user.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const formatDate = (dateStr: string): string => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  const getRoleBadgeVariant = (role: string): 'error' | 'info' | 'default' => {
-    switch (role) {
-      case 'admin': return 'error';
-      case 'user': return 'info';
-      case 'guest': return 'default';
-      default: return 'default';
-    }
-  };
-
-  const getStatusBadgeVariant = (status: string): 'success' | 'default' => {
-    return status === 'active' ? 'success' : 'default';
-  };
 
   if (loading) {
     return (
@@ -123,7 +104,7 @@ const UserTable: React.FC<UserTableProps> = ({
                           </Badge>
                         </td>
                         <td className="py-3 px-4 text-gray-600">
-                          {formatDate(user.createdAt)}
+                          {formatTableDate(user.createdAt)}
                         </td>
                         <td className="py-3 px-4">
                           <CheckCircle className="h-5 w-5 text-success-500" />
@@ -172,7 +153,7 @@ const UserTable: React.FC<UserTableProps> = ({
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="text-sm text-gray-600">
-                      Created {formatDate(user.createdAt)}
+                      Created {formatTableDate(user.createdAt)}
                     </div>
                     <div className="flex gap-2">
                       <Button

@@ -1,22 +1,24 @@
+import type { UserRole, UserStatus } from './enums';
+
 export interface User {
   id: number;
   email: string;
-  role: 'admin' | 'user' | 'guest';
-  status: 'active' | 'inactive';
+  role: UserRole;
+  status: UserStatus;
   createdAt: string;
   signature: string;
 }
 
 export interface CreateUserDTO {
   email: string;
-  role: 'admin' | 'user' | 'guest';
-  status: 'active' | 'inactive';
+  role: UserRole;
+  status: UserStatus;
 }
 
 export interface UpdateUserDTO {
   email?: string;
-  role?: 'admin' | 'user' | 'guest';
-  status?: 'active' | 'inactive';
+  role?: UserRole;
+  status?: UserStatus;
 }
 
 export interface ApiResponse<T> {

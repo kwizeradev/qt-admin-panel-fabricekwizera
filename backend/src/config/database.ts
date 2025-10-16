@@ -26,15 +26,15 @@ const createUsersTable = (): void => {
   `;
 
   db.exec(query);
-  console.log('✅ Users table ready');
+  console.log('Users table ready');
 };
 
 export const initializeDatabase = (): void => {
   try {
     createUsersTable();
-    console.log('✅ Database initialized successfully');
+    console.log('Database initialized successfully ');
   } catch (error) {
-    console.error('❌ Database initialization failed:', error);
+    console.error('Database initialization failed:', error);
     throw error;
   }
 };

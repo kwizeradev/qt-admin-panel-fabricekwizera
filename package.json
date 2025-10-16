@@ -1,0 +1,25 @@
+{
+  "name": "qt-admin-panel-fabricekwizera",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "dev": "tsx index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kwizeradev/qt-admin-panel-fabricekwizera.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/kwizeradev/qt-admin-panel-fabricekwizera/issues"
+  },
+  "homepage": "https://github.com/kwizeradev/qt-admin-panel-fabricekwizera#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "tsx": "^4.20.6"
+  }
+}
