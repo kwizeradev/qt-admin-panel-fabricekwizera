@@ -12,7 +12,7 @@ import { encodeUsers } from '../services/proto.service';
 import { CreateUserDTO, UpdateUserDTO } from '../types';
 import { sendSuccess, sendError } from '../utils/response';
 import { isValidRole, isValidStatus, isValidId } from '../utils/validation';
-import { HTTP_STATUS, ERROR_MESSAGES } from '../constants';
+import { HTTP_STATUS, ERROR_MESSAGES, CONTENT_TYPES, CACHE_CONTROL } from '../constants';
 
 const router = Router();
 
@@ -45,9 +45,10 @@ router.get('/users/export', async (_req: Request, res: Response) => {
     const users = getAllUsers();
     const binaryData = await encodeUsers(users);
 
-    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Type', CONTENT_TYPES.PROTOBUF);
     res.setHeader('Content-Disposition', 'attachment; filename="users.pb"');
     res.setHeader('Content-Length', binaryData.length.toString());
+    res.setHeader('Cache-Control', CACHE_CONTROL.NO_STORE);
 
     return res.status(HTTP_STATUS.OK).send(binaryData);
   } catch (error) {
@@ -107,7 +108,7 @@ router.post('/users', (req: Request, res: Response) => {
     return sendSuccess(res, newUser, HTTP_STATUS.CREATED);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_CREATE_USER;
-    const statusCode = error instanceof Error && error.message.includes('already exists') 
+    const statusCode = error instanceof Error && error.message === ERROR_MESSAGES.DUPLICATE_EMAIL
       ? HTTP_STATUS.BAD_REQUEST 
       : HTTP_STATUS.INTERNAL_SERVER_ERROR;
     return sendError(res, errorMessage, statusCode);
@@ -135,7 +136,7 @@ router.put('/users/:id', (req: Request, res: Response) => {
     return sendSuccess(res, updatedUser);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_UPDATE_USER;
-    const statusCode = error instanceof Error && error.message === 'User not found' 
+    const statusCode = error instanceof Error && error.message === ERROR_MESSAGES.USER_NOT_FOUND
       ? HTTP_STATUS.NOT_FOUND 
       : HTTP_STATUS.INTERNAL_SERVER_ERROR;
     return sendError(res, errorMessage, statusCode);
@@ -153,7 +154,7 @@ router.delete('/users/:id', (req: Request, res: Response) => {
     return sendSuccess(res, null);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_DELETE_USER;
-    const statusCode = error instanceof Error && error.message === 'User not found' 
+    const statusCode = error instanceof Error && error.message === ERROR_MESSAGES.USER_NOT_FOUND
       ? HTTP_STATUS.NOT_FOUND 
       : HTTP_STATUS.INTERNAL_SERVER_ERROR;
     return sendError(res, errorMessage, statusCode);

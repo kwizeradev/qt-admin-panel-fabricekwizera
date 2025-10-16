@@ -27,13 +27,17 @@ export const useUsers = (): UseUsersState & UseUsersActions => {
       setLoading(true);
       setError(null);
 
-      const [protobufBuffer, publicKeyData] = await Promise.all([
-        exportUsersProtobuf(),
-        getPublicKey()
-      ]);
+      const protobufBuffer = await exportUsersProtobuf();
+      // Cache public key across fetches
+      let keyPem = (fetchUsers as any)._cachedKey as string | undefined;
+      if (!keyPem) {
+        const publicKeyData = await getPublicKey();
+        keyPem = publicKeyData.publicKey;
+        (fetchUsers as any)._cachedKey = keyPem;
+      }
 
       const decodedUsers = decodeUsersProtobuf(protobufBuffer);
-      const verifiedUsers = await verifyAndFilterUsers(decodedUsers, publicKeyData.publicKey);
+      const verifiedUsers = await verifyAndFilterUsers(decodedUsers, keyPem);
       setUsers(verifiedUsers);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch users');

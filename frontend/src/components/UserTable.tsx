@@ -24,11 +24,17 @@ const UserTable: React.FC<UserTableProps> = ({
   onDelete, 
   onCreate 
 }) => {
+  const [query, setQuery] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
+  React.useEffect(() => {
+    const id = setTimeout(() => setSearchTerm(query), 200);
+    return () => clearTimeout(id);
+  }, [query]);
+
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.role.toLowerCase().includes(searchTerm.toLowerCase());
+    const q = searchTerm.toLowerCase();
+    const matchesSearch = user.email.toLowerCase().includes(q) || user.role.toLowerCase().includes(q);
     return matchesSearch;
   });
 
@@ -81,8 +87,8 @@ const UserTable: React.FC<UserTableProps> = ({
               <input
                 type="text"
                 placeholder="Search users..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>

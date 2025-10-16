@@ -1,180 +1,139 @@
 # QT Admin Panel
 
-A modern full-stack admin panel with user management, real-time analytics, and cryptographic verification. Built for QT Global Software Ltd technical assessment.
+A lightweight admin panel built for the assessment — featuring user CRUD, simple analytics, protobuf export, and ECDSA signature verification.
+
+---
 
 ## Quick Start
 
+### Fork the repository
 ```bash
-# Install all dependencies
-npm run install:all
-
-# Start development servers
-npm run dev
-```
-
-Visit http://localhost:5173 to view the application.
-
-## Features
-
-- ✅ **User Management** - Complete CRUD operations with validation
-- ✅ **Real-time Dashboard** - Interactive analytics and statistics
-- ✅ **7-Day Analytics** - Beautiful charts showing user creation trends
-- ✅ **Protocol Buffer Export** - Binary data serialization with /users/export endpoint
-- ✅ **Digital Signatures** - ECDSA P-384 cryptographic verification
-- ✅ **Responsive Design** - Mobile-first UI with Tailwind CSS
-- ✅ **Toast Notifications** - Professional user feedback system
-- ✅ **Modal Forms** - Intuitive user creation and editing
-- ✅ **Data Verification** - Only cryptographically verified users displayed
-
-## Tech Stack
-
-### Backend
-- **Runtime:** Node.js with TypeScript
-- **Framework:** Express.js
-- **Database:** SQLite with Better SQLite3
-- **Serialization:** Protocol Buffers (protobuf)
-- **Cryptography:** ECDSA P-384 curve with SHA-384 hashing
-- **Development:** Nodemon + ts-node
-
-### Frontend  
-- **Framework:** React 19 with TypeScript
-- **Styling:** Tailwind CSS
-- **Charts:** Recharts
-- **Icons:** Lucide React
-- **HTTP Client:** Axios
-- **Build Tool:** Vite
-
-### Security
-- **Algorithm:** ECDSA (Elliptic Curve Digital Signature Algorithm)
-- **Curve:** P-384 (secp384r1)
-- **Hash:** SHA-384
-- **Key Management:** Automatic generation and persistence
-
-## Architecture
-
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   React App     │    │   Express API    │    │   SQLite DB     │
-│                 │    │                  │    │                 │
-│ • Dashboard     │◄──►│ • CRUD Routes    │◄──►│ • Users Table   │
-│ • User Forms    │    │ • Crypto Service │    │ • Constraints   │
-│ • Charts        │    │ • Proto Service  │    │ • Indexes       │
-│ • Verification  │    │ • Validation     │    │                 │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-```
-
-### Data Flow
-1. **User Creation:** Form → API → Crypto Sign → Database
-2. **Data Export:** Database → Protocol Buffer → Binary Response  
-3. **Verification:** Frontend → Crypto Verify → Display Valid Users
-4. **Analytics:** Database → Aggregate → Chart Visualization
-
-## Development Workflow
-
-### Prerequisites
-- Node.js 18+ 
-- npm 8+
-
-### Setup
-```bash
-# Clone repository
 git clone https://github.com/kwizeradev/qt-admin-panel-fabricekwizera.git
-cd qt-admin-panel-fabricekwizera
-
-# Install dependencies for all projects
-npm run install:all
-
-# Start development servers (both frontend and backend)
-npm run dev
 ```
 
-### Individual Services
+### Install dependencies for root, backend, and frontend
 ```bash
-# Backend only (http://localhost:3000)
-cd backend && npm run dev
-
-# Frontend only (http://localhost:5173) 
-cd frontend && npm run dev
+cd qt-admin-panel-fabricekwizera
+npm run install:all
 ```
 
-### Build for Production
+# Run frontend + backend together
+npm run dev
+
+* **Frontend:** [http://localhost:5173](http://localhost:5173)
+* **Backend:** [http://localhost:3000](http://localhost:3000)
+
+---
+
+## Project Structure
+
+| Folder        | Description                                    |
+| ------------- | ---------------------------------------------- |
+| **backend/**  | Express + TypeScript + SQLite (better-sqlite3) |
+| **frontend/** | React + Vite + Tailwind                        |
+| **index.ts**  | Runs both apps concurrently with prefixed logs |
+
+---
+
+## Design Approach
+
+* **Single runner:** One command starts both servers for a smoother dev flow.
+* **Direct SQL:** Used `better-sqlite3` — simple, fast, and safe for a small schema.
+* **Focused UI:** A single clean panel without routing; built for clarity, not complexity.
+* **Smart scope:** Delivered the must-haves (CRUD, protobuf, crypto, stats) instead of extra tooling.
+* **Lean performance:** Tight queries, fewer re-renders, smaller bundles.
+
+---
+
+## Key Decisions
+
+- Styling: Tailwind CSS only. No UI library to keep the bundle small, visuals consistent, and customization straightforward.
+- Backend structure: Simple routes + services (no controller layer). Clear for this size; easy to grow into controllers if needed.
+- Docs: No Swagger for this scope; endpoints are documented below for quick reference.
+- Persistence: No ORM or migrations yet; I would add Prisma/Drizzle when the schema grows.
+- Testing: One end-to-end flow (create → export → verify) to validate the core path.
+- Caching: `/api/users/export` is `no-store` to avoid stale downloads.
+
+---
+
+## API Overview
+
+| Method | Endpoint            | Description                      |
+| ------ | ------------------- | -------------------------------- |
+| GET    | `/api/users`        | List users                       |
+| POST   | `/api/users`        | Create user                      |
+| PUT    | `/api/users/:id`    | Update user                      |
+| DELETE | `/api/users/:id`    | Delete user                      |
+| GET    | `/api/users/stats`  | Users created in the last 7 days |
+| GET    | `/api/users/export` | Export users (protobuf)          |
+| GET    | `/api/public-key`   | ECDSA P-384 public key           |
+
+### Errors and status codes
+- 400 Bad Request: invalid id, invalid role/status, missing required fields, duplicate email
+- 404 Not Found: user not found
+- 500 Internal Server Error: unexpected failures
+
+---
+
+## Build & Run (Production)
+
 ```bash
 # Backend
 cd backend && npm run build && npm start
 
-# Frontend  
+# Frontend
 cd frontend && npm run build && npm run preview
 ```
 
-## API Endpoints
+---
 
-### Users
-- `GET /api/users` - List all users
-- `POST /api/users` - Create new user
-- `PUT /api/users/:id` - Update user
-- `DELETE /api/users/:id` - Delete user
-- `GET /api/users/:id` - Get specific user
+## Notes
 
-### Analytics
-- `GET /api/users/stats` - Get user statistics
+* **Security:** Uses ECDSA P-384 + SHA-384 for signing and verifying user emails.
+* **Serialization:** Exports data in Protocol Buffers (`application/x-protobuf`).
+* **Timezone handling:** `createdAt` stored in UTC; stats are calculated in Africa/Kigali (UTC+02:00).
 
-### Export & Security
-- `GET /api/users/export` - Export users as Protocol Buffer
-- `GET /api/public-key` - Get public key for verification
+---
 
-### Health
-- `GET /health` - Server health check
+## Example: Export Users (protobuf)
 
-## Key Implementation Details
+```bash
+curl -sS -H "Accept: application/x-protobuf" \
+  -o users.pb http://localhost:3000/api/users/export
+```
 
-### Protocol Buffers
-- **Schema:** Defined in `backend/src/proto/user.proto`
-- **Encoding:** Server serializes to binary format
-- **Decoding:** Frontend decodes using protobufjs
-- **Content-Type:** `application/octet-stream`
+---
 
-### Digital Signatures
-- **Creation:** Email hashed with SHA-384, signed with ECDSA private key
-- **Verification:** Frontend verifies using WebCrypto API
-- **Key Generation:** Automatic ECDSA P-384 keypair creation
-- **Storage:** Keys persisted in `backend/keys/` directory
+## Smoke Test
 
-### User Verification Flow
-1. User created → Email signed with private key
-2. Frontend fetches public key from `/api/public-key`  
-3. Each user signature verified client-side
-4. Only verified users displayed in table
+Runs an end-to-end check: create → export → verify → cleanup.
 
-## Browser Support
+```bash
+npm --prefix backend run dev
+npm --prefix backend test
+```
 
-- Chrome 88+
-- Firefox 85+
-- Safari 14+
-- Edge 88+
+Optional:
 
-*Requires WebCrypto API support for signature verification*
+```bash
+SMOKE_API_URL=http://localhost:3001 npm --prefix backend test
+```
 
-## Design Decisions & Scope
+---
 
-This implementation is **intentionally scoped** for a technical assessment, prioritizing clean, working code over enterprise patterns that would be over-engineering for this test.
+## Unit Tests
 
-### **What's Included**
-- **Direct routing** - Routes handle business logic appropriately for this scope
-- **Inline services** - Crypto and database operations integrated where they make sense
-- **Essential validation** - Input validation without complex middleware layers
-- **Working features** - All requirements implemented and functional
+```bash
+# Run unit tests (crypto + protobuf)
+npm --prefix backend run test:unit
 
-### **Production Considerations**
-For a production system, I would consider adding:
-- **Authentication & authorization** middleware with JWT/OAuth
-- **Request rate limiting** and input sanitization middleware  
-- **Comprehensive testing** (unit, integration, e2e)
-- **API documentation** with OpenAPI/Swagger
-- **Logging & monitoring** with structured logs
-- **Error tracking** and performance monitoring
-- **Docker containerization** and environment configs
+# Run unit + e2e
+npm --prefix backend run test:all
+```
+
+---
 
 ## Author
 
-**Fabrice Kwizera**  
-GitHub: [@kwizeradev](https://github.com/kwizeradev)
+**Fabrice Kwizera**
+GitHub: [kwizeradev](https://github.com/kwizeradev)

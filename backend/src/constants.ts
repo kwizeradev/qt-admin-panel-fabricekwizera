@@ -9,9 +9,18 @@ export const HTTP_STATUS = {
   INTERNAL_SERVER_ERROR: 500,
 } as const;
 
+export const CONTENT_TYPES = {
+  PROTOBUF: 'application/x-protobuf',
+} as const;
+
+export const CACHE_CONTROL = {
+  NO_STORE: 'no-store',
+} as const;
+
 export const ERROR_MESSAGES = {
   INVALID_USER_ID: 'Invalid user ID',
   USER_NOT_FOUND: 'User not found',
+  DUPLICATE_EMAIL: 'Email already exists',
   MISSING_REQUIRED_FIELDS: 'Missing required fields: email, role, status',
   INVALID_ROLE: 'Invalid role. Must be: admin, user, or guest',
   INVALID_STATUS: 'Invalid status. Must be: active or inactive',

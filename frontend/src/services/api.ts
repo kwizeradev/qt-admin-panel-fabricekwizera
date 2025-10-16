@@ -123,6 +123,7 @@ export const exportUsersProtobuf = async (): Promise<ArrayBuffer> => {
   try {
     const response = await apiClient.get('/api/users/export', {
       responseType: 'arraybuffer',
+      headers: { Accept: 'application/x-protobuf' },
     });
     
     return response.data;

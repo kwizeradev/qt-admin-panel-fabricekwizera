@@ -105,6 +105,9 @@ export const verifyUserSignature = async (
   publicKeyPem: string
 ): Promise<boolean> => {
   try {
+    if (!user.signature || user.signature.length < 8 || user.signature.length % 2 !== 0) {
+      return false;
+    }
     const publicKey = await importPublicKey(publicKeyPem);
     const encoder = new TextEncoder();
     const emailData = encoder.encode(user.email);

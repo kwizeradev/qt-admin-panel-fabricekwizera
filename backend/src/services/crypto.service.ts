@@ -28,8 +28,8 @@ const generateKeypair = (): void => {
     },
   });
 
-  fs.writeFileSync(PRIVATE_KEY_PATH, privKey);
-  fs.writeFileSync(PUBLIC_KEY_PATH, pubKey);
+  fs.writeFileSync(PRIVATE_KEY_PATH, privKey, { mode: 0o600 });
+  fs.writeFileSync(PUBLIC_KEY_PATH, pubKey, { mode: 0o600 });
 
   privateKey = privKey;
   publicKey = pubKey;
@@ -51,7 +51,12 @@ const loadKeypair = (): boolean => {
 export const initializeCrypto = (): void => {
   ensureKeysDirectory();
 
-  if (!loadKeypair()) {
+  try {
+    if (!loadKeypair()) {
+      generateKeypair();
+    }
+  } catch (err) {
+    console.error('Crypto init failed:', err);
     generateKeypair();
   }
 };

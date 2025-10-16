@@ -13,6 +13,7 @@ export const getAllUsers = (): User[] => {
   }
 };
 
+
 export const getUserById = (id: number): User | null => {
   try {
     const query = 'SELECT * FROM users WHERE id = ?';
@@ -38,10 +39,10 @@ export const createUser = (userData: CreateUserDTO): User => {
     if (!isValidEmail(userData.email)) throw new Error('Invalid email format');
 
     const existingUser = getUserByEmail(userData.email);
-    if (existingUser) throw new Error('Email already exists');
+    if (existingUser) throw new Error(ERROR_MESSAGES.DUPLICATE_EMAIL);
 
     const signature = signEmail(userData.email);
-    const createdAt = new Date().toLocaleString('sv-SE');
+    const createdAt = new Date().toISOString();
 
     const query = `
       INSERT INTO users (email, role, status, createdAt, signature)
@@ -68,7 +69,7 @@ export const createUser = (userData: CreateUserDTO): User => {
 export const updateUser = (id: number, userData: UpdateUserDTO): User => {
   try {
     const existingUser = getUserById(id);
-    if (!existingUser) throw new Error('User not found');
+    if (!existingUser) throw new Error(ERROR_MESSAGES.USER_NOT_FOUND);
 
     if (userData.email) {
       if (!isValidEmail(userData.email)) throw new Error('Invalid email format');
@@ -113,7 +114,7 @@ export const updateUser = (id: number, userData: UpdateUserDTO): User => {
 export const deleteUser = (id: number): boolean => {
   try {
     const existingUser = getUserById(id);
-    if (!existingUser) throw new Error('User not found');
+    if (!existingUser) throw new Error(ERROR_MESSAGES.USER_NOT_FOUND);
 
     const query = 'DELETE FROM users WHERE id = ?';
     const result = db.prepare(query).run(id);
@@ -126,29 +127,28 @@ export const deleteUser = (id: number): boolean => {
 
 export const getUserStats = (): DailyStats[] => {
   try {
-    const stats: DailyStats[] = [];
-    
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      
-      const dateStr = date.toISOString().split('T')[0];
+    // Fixed to Africa/Kigali (UTC+02:00)
+    const KIGALI_OFFSET_MINUTES = -120;
+    const modifier = `${-KIGALI_OFFSET_MINUTES} minutes`;
 
-      const query = `
-        SELECT COUNT(*) as count
-        FROM users
-        WHERE DATE(createdAt) = ?
-      `;
-      
-      const result = db.prepare(query).get(dateStr) as { count: number };
-      
-      stats.push({
-        date: dateStr,
-        count: result.count,
-      });
-    }
-    
-    return stats;
+    const sql = `
+      WITH RECURSIVE days(d) AS (
+        SELECT DATE('now','utc', ?, '-6 days')
+        UNION ALL
+        SELECT DATE(d, '+1 day') FROM days WHERE d < DATE('now','utc', ?)
+      )
+      SELECT d as date,
+             COALESCE((
+               SELECT COUNT(*) FROM users WHERE DATE(datetime(createdAt, ?)) = d
+             ), 0) as count
+      FROM days;
+    `;
+
+    const rows = db
+      .prepare(sql)
+      .all(modifier, modifier, modifier) as { date: string; count: number }[];
+
+    return rows.map((r) => ({ date: r.date, count: r.count }));
   } catch (error) {
     throw new Error(ERROR_MESSAGES.FAILED_TO_FETCH_STATISTICS);
   }

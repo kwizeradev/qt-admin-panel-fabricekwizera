@@ -5,9 +5,10 @@ interface AvatarProps {
   email: string;
   size?: 'sm' | 'md';
   verified?: boolean;
+  verifiedTitle?: string;
 }
 
-const Avatar: React.FC<AvatarProps> = ({ email, size = 'sm', verified = true }) => {
+const Avatar: React.FC<AvatarProps> = ({ email, size = 'sm', verified = true, verifiedTitle }) => {
   const getInitials = (email: string) => {
     const parts = email.split('@')[0];
     if (parts.length >= 2) {
@@ -26,13 +27,20 @@ const Avatar: React.FC<AvatarProps> = ({ email, size = 'sm', verified = true }) 
     md: 'h-4 w-4',
   };
 
+  const tooltip = verifiedTitle ?? 'Signature verified';
+
   return (
     <div className="relative flex-shrink-0">
       <div className={`${sizeClasses[size]} bg-blue-500 rounded-full flex items-center justify-center text-white font-medium`}>
         {getInitials(email)}
       </div>
       {verified && (
-        <div className={`absolute -bottom-0.5 -right-0.5 bg-green-500 rounded-full ${badgeSize[size]} flex items-center justify-center`}>
+        <div
+          className={`absolute -bottom-0.5 -right-0.5 bg-green-500 rounded-full ${badgeSize[size]} flex items-center justify-center`}
+          title={tooltip}
+          aria-label={tooltip}
+          role="img"
+        >
           <Check className={`${size === 'sm' ? 'h-2 w-2' : 'h-2.5 w-2.5'} text-white stroke-2`} />
         </div>
       )}
