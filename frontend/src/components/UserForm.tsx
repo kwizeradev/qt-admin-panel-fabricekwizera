@@ -25,6 +25,7 @@ const UserForm: React.FC<UserFormProps> = ({
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (mode === 'edit' && user) {
@@ -41,6 +42,7 @@ const UserForm: React.FC<UserFormProps> = ({
       });
     }
     setErrors({});
+    setTouched({});
   }, [mode, user, isOpen]);
 
   const validateForm = (): boolean => {
@@ -135,8 +137,9 @@ const UserForm: React.FC<UserFormProps> = ({
             id="email"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              errors.email ? 'border-red-300' : 'border-gray-300'
+            onBlur={() => setTouched({ ...touched, email: true })}
+            className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+              errors.email && touched.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
             }`}
             placeholder="user@example.com"
             disabled={loading}

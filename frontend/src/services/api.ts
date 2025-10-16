@@ -135,7 +135,7 @@ export const healthCheck = async (): Promise<boolean> => {
   try {
     const response = await apiClient.get('/health');
     return response.data.success === true;
-  } catch (error) {
+  } catch {
     return false;
   }
 };

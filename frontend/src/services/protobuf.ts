@@ -40,7 +40,7 @@ export const decodeUsersProtobuf = (buffer: ArrayBuffer): User[] => {
       longs: Number,
       enums: String,
       bytes: String,
-    }) as any;
+    }) as { users?: User[] };
 
     return decoded.users || [];
   } catch (error) {

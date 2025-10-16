@@ -21,16 +21,20 @@ const StatsCards: React.FC<StatsCardsProps> = ({ users, stats, loading }) => {
     icon: React.ReactNode;
     color: string;
   }> = ({ title, value, icon, color }) => (
-    <Card>
+    <Card className="hover:shadow-md transition-shadow">
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-gray-600">{title}</p>
-            <p className="text-2xl font-semibold text-gray-900">
-              {loading ? '-' : value}
-            </p>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">{title}</p>
+            {loading ? (
+              <div className="h-9 w-16 bg-gray-200 rounded animate-pulse mt-1"></div>
+            ) : (
+              <p className="text-3xl font-bold text-gray-900 mt-1">
+                {value.toLocaleString()}
+              </p>
+            )}
           </div>
-          <div className={`p-3 rounded-lg ${color}`}>
+          <div className={`p-3 rounded-xl ${color}`}>
             {icon}
           </div>
         </div>
@@ -49,7 +53,7 @@ const StatsCards: React.FC<StatsCardsProps> = ({ users, stats, loading }) => {
       <StatCard
         title="Active Users"
         value={activeUsers}
-        icon={<UserCheck className="h-6 w-6 text-success-600" />}
+        icon={<UserCheck className="h-6 w-6 text-green-600" />}
         color="bg-green-50"
       />
       <StatCard

@@ -44,36 +44,18 @@ export const useUsers = (): UseUsersState & UseUsersActions => {
   }, []);
 
   const create = useCallback(async (userData: CreateUserDTO) => {
-    try {
-      setError(null);
-      await createUser(userData);
-      await fetchUsers();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create user');
-      throw err;
-    }
+    await createUser(userData);
+    await fetchUsers();
   }, [fetchUsers]);
 
   const update = useCallback(async (id: number, userData: UpdateUserDTO) => {
-    try {
-      setError(null);
-      await updateUser(id, userData);
-      await fetchUsers();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update user');
-      throw err;
-    }
+    await updateUser(id, userData);
+    await fetchUsers();
   }, [fetchUsers]);
 
   const remove = useCallback(async (id: number) => {
-    try {
-      setError(null);
-      await deleteUser(id);
-      await fetchUsers();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete user');
-      throw err;
-    }
+    await deleteUser(id);
+    await fetchUsers();
   }, [fetchUsers]);
 
   useEffect(() => {

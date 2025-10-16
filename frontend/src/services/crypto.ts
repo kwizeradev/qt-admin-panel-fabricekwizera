@@ -46,7 +46,7 @@ const derToRaw = (derSignature: Uint8Array): Uint8Array => {
     
     if (derSignature[offset++] !== 0x30) throw new Error('Invalid DER signature');
     
-    let length = derSignature[offset++];
+    const length = derSignature[offset++];
     if (length & 0x80) {
       const lengthBytes = length & 0x7f;
       offset += lengthBytes;
