@@ -4,6 +4,9 @@ import { createUser, updateUser, deleteUser, getPublicKey, exportUsersProtobuf }
 import { verifyAndFilterUsers } from '../services/crypto';
 import { decodeUsersProtobuf } from '../services/protobuf';
 
+// Cache public key to avoid repeated fetches
+let cachedPublicKey: string | undefined;
+
 interface UseUsersState {
   users: User[];
   loading: boolean;
@@ -29,15 +32,13 @@ export const useUsers = (): UseUsersState & UseUsersActions => {
 
       const protobufBuffer = await exportUsersProtobuf();
       // Cache public key across fetches
-      let keyPem = (fetchUsers as any)._cachedKey as string | undefined;
-      if (!keyPem) {
+      if (!cachedPublicKey) {
         const publicKeyData = await getPublicKey();
-        keyPem = publicKeyData.publicKey;
-        (fetchUsers as any)._cachedKey = keyPem;
+        cachedPublicKey = publicKeyData.publicKey;
       }
 
       const decodedUsers = decodeUsersProtobuf(protobufBuffer);
-      const verifiedUsers = await verifyAndFilterUsers(decodedUsers, keyPem);
+      const verifiedUsers = await verifyAndFilterUsers(decodedUsers, cachedPublicKey!);
       setUsers(verifiedUsers);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch users');

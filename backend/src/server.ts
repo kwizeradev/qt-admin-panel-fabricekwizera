@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { initializeDatabase } from './config/database';
 import { initializeCrypto } from './services/crypto.service';
+import { initializeProto } from './services/proto.service';
 import userRoutes from './routes/user.routes';
 
 dotenv.config();
@@ -16,6 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 
 initializeDatabase();
 initializeCrypto();
+initializeProto();
 
 app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({

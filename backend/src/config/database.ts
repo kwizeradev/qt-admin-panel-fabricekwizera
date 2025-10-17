@@ -30,13 +30,14 @@ const createUsersTable = (): void => {
 };
 
 export const initializeDatabase = (): void => {
-  try {
-    createUsersTable();
-    console.log('Database initialized successfully ');
-  } catch (error) {
-    console.error('Database initialization failed:', error);
-    throw error;
-  }
+  process.nextTick(() => {
+    try {
+      createUsersTable();
+      console.log('Database initialized successfully ');
+    } catch (error) {
+      console.error('Database initialization failed:', error);
+    }
+  });
 };
 
 export default db;

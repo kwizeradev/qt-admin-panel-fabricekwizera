@@ -16,23 +16,34 @@ const ensureKeysDirectory = (): void => {
 };
 
 const generateKeypair = (): void => {
-  const { privateKey: privKey, publicKey: pubKey } = crypto.generateKeyPairSync('ec', {
-    namedCurve: 'secp384r1',
-    publicKeyEncoding: {
-      type: 'spki',
-      format: 'pem',
-    },
-    privateKeyEncoding: {
-      type: 'pkcs8',
-      format: 'pem',
-    },
+  process.nextTick(() => {
+    crypto.generateKeyPair('ec', {
+      namedCurve: 'secp384r1',
+      publicKeyEncoding: {
+        type: 'spki',
+        format: 'pem',
+      },
+      privateKeyEncoding: {
+        type: 'pkcs8',
+        format: 'pem',
+      },
+    }, (err, pubKey, privKey) => {
+      if (err) {
+        console.error('Key generation failed:', err);
+        return;
+      }
+
+      try {
+        fs.writeFileSync(PRIVATE_KEY_PATH, privKey, { mode: 0o600 });
+        fs.writeFileSync(PUBLIC_KEY_PATH, pubKey, { mode: 0o600 });
+
+        privateKey = privKey;
+        publicKey = pubKey;
+      } catch (writeErr) {
+        console.error('Key write failed:', writeErr);
+      }
+    });
   });
-
-  fs.writeFileSync(PRIVATE_KEY_PATH, privKey, { mode: 0o600 });
-  fs.writeFileSync(PUBLIC_KEY_PATH, pubKey, { mode: 0o600 });
-
-  privateKey = privKey;
-  publicKey = pubKey;
 };
 
 const loadKeypair = (): boolean => {

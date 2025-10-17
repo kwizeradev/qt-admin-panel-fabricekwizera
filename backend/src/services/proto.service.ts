@@ -19,6 +19,14 @@ const loadProto = async (): Promise<protobuf.Root> => {
   }
 };
 
+export const initializeProto = (): void => {
+  process.nextTick(() => {
+    loadProto().catch(err => {
+      console.error('Proto init failed:', err);
+    });
+  });
+};
+
 export const encodeUsers = async (users: User[]): Promise<Buffer> => {
   try {
     const root = await loadProto();

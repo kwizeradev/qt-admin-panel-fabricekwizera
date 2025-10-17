@@ -130,16 +130,46 @@ export const verifyUserSignature = async (
     return false;
   }
 };
+const processInBatches = async <T, R>(
+  items: T[],
+  processor: (item: T) => Promise<R>,
+  batchSize: number = 10
+): Promise<R[]> => {
+  const results: R[] = [];
+  
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    const batchResults = await Promise.allSettled(
+      batch.map(processor)
+    );
+    
+    const successfulResults = batchResults
+      .filter(result => result.status === 'fulfilled')
+      .map(result => (result as PromiseFulfilledResult<R>).value);
+    
+    results.push(...successfulResults);
+  }
+  
+  return results;
+};
+
 export const verifyAndFilterUsers = async (
   users: User[],
   publicKeyPem: string
 ): Promise<User[]> => {
   try {
-    const verificationResults = await Promise.all(
-      users.map(async (user) => {
-        const isValid = await verifyUserSignature(user, publicKeyPem);
-        return { user, isValid };
-      })
+    const verificationResults = await processInBatches(
+      users,
+      async (user) => {
+        try {
+          const isValid = await verifyUserSignature(user, publicKeyPem);
+          return { user, isValid };
+        } catch (error) {
+          console.warn(`Failed to verify user ${user.email}:`, error);
+          return { user, isValid: false };
+        }
+      },
+      5 // Process 5 users at a time to prevent overwhelming the system
     );
 
     const validUsers = verificationResults
